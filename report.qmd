@@ -8,27 +8,71 @@ format: typst
 ## **Part 0: libraries**
 
 ```{r}
-
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(readr)
 ```
 
 ## **Part 1:** **Defining Research Question**
 
-Chosen Question:
+Chosen Question: Do states with higher renewable usage have higher total energy uses?
 
 ## **Part 2: Data Preparation and Cleaning**
 
 ```{r}
+ru<-read.csv("~/stat133/ev-power-Sunniskies/data/renew-use-2021.csv")
+rus<-read.csv("~/stat133/ev-power-Sunniskies/data/renew-use-2022.csv")
+ruse<-read.csv("~/stat133/ev-power-Sunniskies/data/renew-use-2023.csv")
+toten21<-read.csv("~/stat133/ev-power-Sunniskies/data/total-use-2021.csv")
+toten22<-read.csv("~/stat133/ev-power-Sunniskies/data/total-use-2022.csv")
+toten23<-read.csv("~/stat133/ev-power-Sunniskies/data/total-use-2023.csv")
+evst<-read.csv("~/stat133/ev-power-Sunniskies/data/ev-registrations-by-state-2023.csv")
+ev<-trimws(evst$electric.vehicle.registrations_by_state..2023.)
+ev<-gsub("[^A-Za-z]","",ev)
+ev<-tools::toTitleCase(tolower(ev))
+tan<-state.abb[match(ev,state.name)]
+evst$STATE<-tan
+evst<-evst|>select(-electric.vehicle.registrations_by_state..2023.)
+rust<-gsub("[^0-9.]","",ru$Renewable_Use_2021)
+rust<-as.numeric(rust)
+ru$Renewable_Use_2021<-rust
 
+rus$Renewable_Use_2022<-gsub("[^0-9.]","",rus$Renewable_Use_2022)
+rus$Renewable_Use_2022<-as.numeric(rus$Renewable_Use_2022)
 ```
 
 ## **Part 3: Joining / Pivoting Datasets for Analysis**
 
 ```{r}
+state_totals<-colSums(toten21[ ,-1],na.rm=TRUE)
+state_use_21<-data.frame(STATE=names(state_totals),Total_Use=as.numeric(state_totals))
+state_totals<-colSums(toten22[ ,-1],na.rm=TRUE)
+state_use_22<-data.frame(STATE=names(state_totals),Total_Use=as.numeric(state_totals))
+state_totals<-colSums(toten23[ ,-1],na.rm=TRUE)
+state_use_23<-data.frame(STATE=names(state_totals),Total_Use=as.numeric(state_totals))
+compare_21<-full_join(ru,state_use_21,join_by("State"=="STATE"))
+compare_22<-full_join(rus,state_use_22,join_by("State"=="STATE"))
+compare_23<-full_join(ruse,state_use_23,join_by("State"=="STATE"))compare_21$Year<-2021
+compare_21$Year<-2021
+compare_22$Year<-2022
+compare_23$Year<-2023
 
+er<-read.csv("ev-registrations-by-state-2023.csv")
+er$X<-gsub("[^0-9.-]","",er$X)
 ```
 
 ## **Part 4: Mapping Visualization**
 
 ```{r}
-
+compare_21<-compare_21|>rename(Total_21=Total_Use)
+compare_22<-compare_22|>rename(Total_22=Total_Use)
+compare_23<-compare_23|>rename(Total_23=Total_Use)
+combined<-bind_rows(compare_21,compare_22,compare_23)
+ggplot(compare_21,aes(x=Renewable_Use_2021,y=Total_21,color=State))+geom_point()
+ggplot(compare_22,aes(x=Renewable_Use_2022,y=Total_22,color=State))+geom_point()
+ggplot(compare_23,aes(x=Renewable_Use_2023,y=Total_23,color=State))+geom_point()
+#We observe that the renewable sources are roughly correlated with the amount of energy expended, with minor outliers.
+clean<-function(x)
 ```
